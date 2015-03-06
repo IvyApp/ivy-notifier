@@ -150,6 +150,18 @@ export default Ember.Object.extend({
     this.send('becameDisconnected');
   },
 
+  emit: function(channelName, eventName, data) {
+    var channelListeners = this.listeners[channelName];
+    if (!channelListeners) { return; }
+
+    var eventListeners = channelListeners[eventName];
+    if (!eventListeners) { return; }
+
+    forEach(keys(eventListeners), function(guid) {
+      eventListeners[guid].call(null, data);
+    });
+  },
+
   flushAllPending: function() {
     this._flushAllPendingBind();
     this._flushAllPendingUnbind();
@@ -173,18 +185,6 @@ export default Ember.Object.extend({
       pendingUnbinds = this.pendingUnbind[channelName] = [];
     }
     pendingUnbinds.push(eventName);
-  },
-
-  receive: function(channelName, eventName, data) {
-    var channelListeners = this.listeners[channelName];
-    if (!channelListeners) { return; }
-
-    var eventListeners = channelListeners[eventName];
-    if (!eventListeners) { return; }
-
-    forEach(keys(eventListeners), function(guid) {
-      eventListeners[guid].call(null, data);
-    });
   },
 
   send: function(name) {
@@ -320,7 +320,7 @@ export default Ember.Object.extend({
       eventBinding = pusherSubscription.eventBindings[eventName] = {
         listenerCount: 0,
         handlerFunction: Ember.run.bind(this, function(data) {
-          this.receive(channelName, eventName, data);
+          this.emit(channelName, eventName, data);
         })
       };
 

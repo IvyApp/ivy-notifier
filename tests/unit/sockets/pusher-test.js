@@ -69,11 +69,11 @@ test('a listener can be bound to a socket', function(assert) {
   var socket = PusherSocket.create({ pusher: pusher });
 
   socket.bind('channel', 'event', F);
-  socket.receive('channel', 'event');
+  socket.emit('channel', 'event');
 
   assert.equal(count, 1, 'the event was triggered');
 
-  socket.receive('channel', 'event');
+  socket.emit('channel', 'event');
 
   assert.equal(count, 2, 'the event was triggered');
 });
@@ -87,7 +87,7 @@ test('a listener can be unbound from a socket', function(assert) {
 
   socket.bind('channel', 'event', F);
   socket.unbind('channel', 'event', F);
-  socket.receive('channel', 'event');
+  socket.emit('channel', 'event');
 
   assert.equal(count, 0, 'the event was not triggered');
 });
@@ -112,7 +112,7 @@ test('a subscriber can subscribe to a socket', function(assert) {
   var subscriber = Subscriber.create();
 
   socket.subscribe(subscriber);
-  socket.receive('channel', 'event');
+  socket.emit('channel', 'event');
 
   assert.equal(count, 1, 'the event was triggered');
 });
@@ -138,7 +138,7 @@ test('a subscriber can unsubscribe from a socket', function(assert) {
 
   socket.subscribe(subscriber);
   socket.unsubscribe(subscriber);
-  socket.receive('channel', 'event');
+  socket.emit('channel', 'event');
 
   assert.equal(count, 0, 'the event was not triggered');
 });
