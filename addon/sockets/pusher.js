@@ -1,4 +1,5 @@
 import Ember from 'ember';
+import Socket from '../socket';
 
 var forEach = Ember.EnumerableUtils.forEach;
 var isEmpty = Ember.isEmpty;
@@ -108,7 +109,7 @@ var retrieveFromCurrentState = Ember.computed(function(key) {
   return Ember.get(this.get('currentState'), key);
 }).property('currentState');
 
-export default Ember.Object.extend({
+export default Socket.extend({
   init: function() {
     this._super();
     this.listeners = {};
