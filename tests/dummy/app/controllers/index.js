@@ -1,11 +1,7 @@
 import Ember from 'ember';
+import NotifiableMixin from 'ivy-notifier/mixins/notifiable';
 
-export default Ember.ArrayController.extend({
-  init: function() {
-    this._super();
-    this.notifier.subscribe(this);
-  },
-
+export default Ember.ArrayController.extend(NotifiableMixin, {
   actions: {
     pushBuild: function(payload) {
       this.store.pushPayload('build', payload);
@@ -21,10 +17,5 @@ export default Ember.ArrayController.extend({
         'build:started': 'pushBuild'
       }
     }
-  },
-
-  willDestroy: function() {
-    this.notifier.unsubscribe(this);
-    this._super();
   }
 });
