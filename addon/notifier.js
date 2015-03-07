@@ -5,7 +5,12 @@ var keys = Ember.keys;
 
 export default Ember.Object.extend({
   socketFor: function(typeName) {
-    return this.container.lookup('socket:' + typeName);
+    var socket = this.container.lookup('socket:' + typeName);
+    if (!socket) {
+      throw new Ember.Error('No socket was found for "' + typeName + '"');
+    }
+
+    return socket;
   },
 
   subscribe: function(subscriber) {

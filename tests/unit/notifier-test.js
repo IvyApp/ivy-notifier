@@ -58,3 +58,18 @@ test('a subscriber can unsubscribe from a notifier', function(assert) {
   notifier.subscribe(subscriber);
   notifier.unsubscribe(subscriber);
 });
+
+test('should throw an error if socket cannot be found', function(assert) {
+  var Subscriber = Ember.Controller.extend({
+    subscriptions: {
+      test: { event: 'event' }
+    }
+  });
+
+  var notifier = Notifier.create({ container: container });
+  var subscriber = Subscriber.create();
+
+  assert.throws(function() {
+    notifier.subscribe(subscriber);
+  }, /No socket was found for "test"/);
+});
