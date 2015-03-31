@@ -1,5 +1,7 @@
 # ivy-notifier
 
+[![Build Status](https://travis-ci.org/IvyApp/ivy-notifier.svg?branch=master)](https://travis-ci.org/IvyApp/ivy-notifier)
+
 Ember CLI addon that provides easy realtime notifications.
 
 Currently only [Pusher](https://pusher.com/) is supported.
