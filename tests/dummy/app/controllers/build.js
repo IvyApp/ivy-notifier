@@ -1,11 +1,11 @@
 import Ember from 'ember';
 
-export default Ember.ObjectController.extend({
+export default Ember.Controller.extend({
   labelClass: Ember.computed(function() {
-    var state = this.get('state');
+    var state = this.get('model.state');
     var labelClassMap = this.get('labelClassMap');
     return labelClassMap[state];
-  }).property('state'),
+  }).property('model.state'),
 
   labelClassMap: {
     'created': 'label-info',

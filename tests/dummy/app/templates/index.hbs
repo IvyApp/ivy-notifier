@@ -7,16 +7,16 @@
   {{#each build in this itemController="build"}}
     <li>
       <span {{bind-attr class=":pull-right :label build.labelClass"}}>
-        {{build.state}}
+        {{build.model.state}}
       </span>
       <p>
-        {{build.commit.committerName}} pushed to
-        {{build.commit.branch}} at
-        <a {{bind-attr href=build.commit.compareURL}}>{{build.repository.slug}}</a>
+        {{build.model.commit.committerName}} pushed to
+        {{build.model.commit.branch}} at
+        <a {{bind-attr href=build.commit.compareURL}}>{{build.model.repository.slug}}</a>
       </p>
       <p class="small text-muted">
-        <a {{bind-attr href=build.commit.compareURL}}>{{build.commit.shortSha}}</a>
-        {{build.commit.message}}
+        <a {{bind-attr href=build.commit.compareURL}}>{{build.model.commit.shortSha}}</a>
+        {{build.model.commit.message}}
       </p>
     </li>
   {{/each}}
