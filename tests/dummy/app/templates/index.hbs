@@ -12,10 +12,10 @@
       <p>
         {{build.model.commit.committerName}} pushed to
         {{build.model.commit.branch}} at
-        <a {{bind-attr href=build.commit.compareURL}}>{{build.model.repository.slug}}</a>
+        <a {{bind-attr href=build.model.commit.compareURL}}>{{build.model.repository.slug}}</a>
       </p>
       <p class="small text-muted">
-        <a {{bind-attr href=build.commit.compareURL}}>{{build.model.commit.shortSha}}</a>
+        <a {{bind-attr href=build.model.commit.compareURL}}>{{build.model.commit.shortSha}}</a>
         {{build.model.commit.message}}
       </p>
     </li>
