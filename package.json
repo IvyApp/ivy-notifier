@@ -42,7 +42,8 @@
     "realtime"
   ],
   "dependencies": {
-    "ember-cli-babel": "^4.0.0"
+    "ember-cli-babel": "^4.0.0",
+    "ivy-stateful": "0.0.1"
   },
   "ember-addon": {
     "configPath": "tests/dummy/config"

@@ -1,115 +1,16 @@
 import Ember from 'ember';
 import Socket from '../socket';
+import StatefulMixin from 'ivy-stateful/mixins/stateful';
 
 var forEach = Ember.EnumerableUtils.forEach;
 var isEmpty = Ember.isEmpty;
 var keys = Ember.keys;
 
-var RootState = {
-  isConnected: false,
-  isConnecting: false,
-  isUnavailable: false,
-
-  connected: {
-    isConnected: true,
-
-    becameConnecting: function(socket) {
-      socket.transitionTo('connecting.reconnecting');
-    },
-
-    listenerAdded: function(socket, channelName, eventName) {
-      socket.pushPendingBind(channelName, eventName);
-      socket.flushAllPending();
-    },
-
-    listenerRemoved: function(socket, channelName, eventName) {
-      socket.pushPendingUnbind(channelName, eventName);
-      socket.flushAllPending();
-    }
-  },
-
-  connecting: {
-    isConnecting: true,
-
-    firstTime: {
-      becameConnected: function(socket) {
-        socket.transitionTo('connected');
-      },
-
-      exit: function(socket) {
-        socket.flushAllPending();
-      },
-
-      listenerAdded: function(socket, channelName, eventName) {
-        socket.pushPendingBind(channelName, eventName);
-      },
-
-      listenerRemoved: function(socket, channelName, eventName) {
-        socket.pushPendingUnbind(channelName, eventName);
-      }
-    },
-
-    reconnecting: {
-      becameDisconnected: function(socket) {
-        socket.transitionTo('disconnected.temporary');
-      }
-    }
-  },
-
-  initialized: {
-    becameConnected: function(socket) {
-      socket.transitionTo('connected');
-      socket.flushAllPending();
-    },
-
-    becameConnecting: function(socket) {
-      socket.transitionTo('connecting.firstTime');
-    },
-
-    listenerAdded: function(socket, channelName, eventName) {
-      socket.pushPendingBind(channelName, eventName);
-    },
-
-    listenerRemoved: function(socket, channelName, eventName) {
-      socket.pushPendingUnbind(channelName, eventName);
-    }
-  },
-
-  disconnected: {
-    temporary: {
-      becameUnavailable: function(socket) {
-        socket.transitionTo('disconnected.unavailable');
-      }
-    },
-
-    unavailable: {
-      isUnavailable: true
-    }
-  }
-};
-
-function wireState(state, parentState, stateName) {
-  state = Ember.merge(parentState ? Ember.create(parentState) : {}, state);
-  state.parentState = parentState;
-  state.stateName = stateName;
-
-  for (var prop in state) {
-    if (!state.hasOwnProperty(prop) || prop === 'parentState' || prop === 'stateName') { continue; }
-    if (typeof state[prop] === 'object') {
-      state[prop] = wireState(state[prop], state, stateName + '.' + prop);
-    }
-  }
-
-  return state;
-}
-
-RootState = wireState(RootState, null, 'root');
-
 var retrieveFromCurrentState = Ember.computed(function(key) {
   return Ember.get(this.get('currentState'), key);
 }).property('currentState');
 
-export default Socket.extend({
+export default Socket.extend(StatefulMixin, {
   init: function() {
     this._super();
     this.listeners = {};
@@ -145,8 +46,6 @@ export default Socket.extend({
     this.send('becameConnecting');
   },
 
-  currentState: RootState.initialized,
-
   disconnected: function() {
     this.send('becameDisconnected');
   },
@@ -168,6 +67,8 @@ export default Socket.extend({
     this._flushAllPendingUnbind();
   },
 
+  initialState: 'initialized',
+
   isConnected: retrieveFromCurrentState,
   isConnecting: retrieveFromCurrentState,
   isUnavailable: retrieveFromCurrentState,
@@ -188,18 +89,87 @@ export default Socket.extend({
     pendingUnbinds.push(eventName);
   },
 
-  send: function(name) {
-    var currentState = this.get('currentState');
+  rootState: {
+    isConnected: false,
+    isConnecting: false,
+    isUnavailable: false,
 
-    if (!currentState[name]) {
-      throw new Ember.Error('Attempted to handle event "' + name +
-                            '" on ' + String(this) + ' while in state ' +
-                            currentState.stateName + '.');
+    connected: {
+      isConnected: true,
+
+      becameConnecting: function(socket) {
+        socket.transitionTo('connecting.reconnecting');
+      },
+
+      listenerAdded: function(socket, channelName, eventName) {
+        socket.pushPendingBind(channelName, eventName);
+        socket.flushAllPending();
+      },
+
+      listenerRemoved: function(socket, channelName, eventName) {
+        socket.pushPendingUnbind(channelName, eventName);
+        socket.flushAllPending();
+      }
+    },
+
+    connecting: {
+      isConnecting: true,
+
+      firstTime: {
+        becameConnected: function(socket) {
+          socket.transitionTo('connected');
+        },
+
+        exit: function(socket) {
+          socket.flushAllPending();
+        },
+
+        listenerAdded: function(socket, channelName, eventName) {
+          socket.pushPendingBind(channelName, eventName);
+        },
+
+        listenerRemoved: function(socket, channelName, eventName) {
+          socket.pushPendingUnbind(channelName, eventName);
+        }
+      },
+
+      reconnecting: {
+        becameDisconnected: function(socket) {
+          socket.transitionTo('disconnected.temporary');
+        }
+      }
+    },
+
+    initialized: {
+      becameConnected: function(socket) {
+        socket.transitionTo('connected');
+        socket.flushAllPending();
+      },
+
+      becameConnecting: function(socket) {
+        socket.transitionTo('connecting.firstTime');
+      },
+
+      listenerAdded: function(socket, channelName, eventName) {
+        socket.pushPendingBind(channelName, eventName);
+      },
+
+      listenerRemoved: function(socket, channelName, eventName) {
+        socket.pushPendingUnbind(channelName, eventName);
+      }
+    },
+
+    disconnected: {
+      temporary: {
+        becameUnavailable: function(socket) {
+          socket.transitionTo('disconnected.unavailable');
+        }
+      },
+
+      unavailable: {
+        isUnavailable: true
+      }
     }
-
-    var args = [this].concat(Array.prototype.slice.call(arguments, 1));
-
-    return currentState[name].apply(null, args);
   },
 
   subscribe: function(subscriber) {
@@ -233,26 +203,6 @@ export default Socket.extend({
         this.bind(channelName, eventName, listener);
       }, this);
     }, this);
-  },
-
-  transitionTo: function(name) {
-    var pivotName = name.split('.').shift();
-    var currentState = this.get('currentState');
-    var state = currentState;
-
-    do {
-      if (state.exit) { state.exit(this); }
-      state = state.parentState;
-    } while (!state.hasOwnProperty(pivotName));
-
-    var path = name.split('.');
-
-    for (var i = 0; i < path.length; i++) {
-      state = state[path[i]];
-      if (state.enter) { state.enter(this); }
-    }
-
-    this.set('currentState', state);
   },
 
   unavailable: function() {
