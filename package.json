@@ -47,6 +47,7 @@
   ],
   "dependencies": {
     "ember-cli-babel": "^5.1.6",
+    "ember-getowner-polyfill": "^1.0.1",
     "ivy-stateful": "0.0.2"
   },
   "ember-addon": {

@@ -1,5 +1,5 @@
+import getOwner from 'ember-getowner-polyfill';
 import Service from 'ember-service';
-import getOwner from 'ember-owner/get';
 
 export default Service.extend({
   socketFor(typeName) {
