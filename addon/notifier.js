@@ -1,33 +1,12 @@
-import Ember from 'ember';
+import Notifier from 'ivy-notifier/services/notifier';
+import { warn } from 'ember-debug';
 
-var forEach = Ember.EnumerableUtils.forEach;
-var keys = Ember.keys;
+export default Notifier.extend({
+  init() {
+    this._super(...arguments);
 
-export default Ember.Object.extend({
-  socketFor: function(typeName) {
-    var socket = this.container.lookup('socket:' + typeName);
-    if (!socket) {
-      throw new Ember.Error('No socket was found for "' + typeName + '"');
-    }
-
-    return socket;
-  },
-
-  subscribe: function(subscriber) {
-    var subscriptions = subscriber.subscriptions;
-    if (!subscriptions) { return; }
-
-    forEach(keys(subscriptions), function(typeName) {
-      this.socketFor(typeName).subscribe(subscriber, subscriptions[typeName]);
-    }, this);
-  },
-
-  unsubscribe: function(subscriber) {
-    var subscriptions = subscriber.subscriptions;
-    if (!subscriptions) { return; }
-
-    forEach(keys(subscriptions), function(typeName) {
-      this.socketFor(typeName).unsubscribe(subscriber, subscriptions[typeName]);
-    }, this);
+    warn("The 'ivy-notifier/notifier' module is deprecated, use 'ivy-notifier/services/notifier' instead", false, {
+      id: 'ivy-notifier.notifier-module'
+    });
   }
 });

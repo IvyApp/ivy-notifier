@@ -1,17 +1,17 @@
-import Ember from 'ember';
-import Socket from '../socket';
+import Socket from './socket';
 import StatefulMixin from 'ivy-stateful/mixins/stateful';
+import computed from 'ember-computed';
+import get from 'ember-metal/get';
+import { bind } from 'ember-runloop';
+import { guidFor } from 'ember-metal/utils';
+import { isEmpty } from 'ember-utils';
 
-var forEach = Ember.EnumerableUtils.forEach;
-var isEmpty = Ember.isEmpty;
-var keys = Ember.keys;
-
-var retrieveFromCurrentState = Ember.computed(function(key) {
-  return Ember.get(this.get('currentState'), key);
+const retrieveFromCurrentState = computed(function(key) {
+  return get(this.get('currentState'), key);
 }).property('currentState');
 
 export default Socket.extend(StatefulMixin, {
-  init: function() {
+  init() {
     this._super();
     this.listeners = {};
     this.pendingBind = {};
@@ -21,48 +21,48 @@ export default Socket.extend(StatefulMixin, {
     this._setup();
   },
 
-  bind: function(channelName, eventName, fn) {
-    var channelListeners = this.listeners[channelName];
+  bind(channelName, eventName, fn) {
+    let channelListeners = this.listeners[channelName];
     if (!channelListeners) {
       channelListeners = this.listeners[channelName] = {};
     }
 
-    var eventListeners = channelListeners[eventName];
+    let eventListeners = channelListeners[eventName];
     if (!eventListeners) {
       eventListeners = channelListeners[eventName] = {};
     }
 
-    var guid = Ember.guidFor(fn);
+    const guid = guidFor(fn);
     eventListeners[guid] = fn;
 
     this.send('listenerAdded', channelName, eventName);
   },
 
-  connected: function() {
+  connected() {
     this.send('becameConnected');
   },
 
-  connecting: function() {
+  connecting() {
     this.send('becameConnecting');
   },
 
-  disconnected: function() {
+  disconnected() {
     this.send('becameDisconnected');
   },
 
-  emit: function(channelName, eventName, data) {
-    var channelListeners = this.listeners[channelName];
+  emit(channelName, eventName, data) {
+    const channelListeners = this.listeners[channelName];
     if (!channelListeners) { return; }
 
-    var eventListeners = channelListeners[eventName];
+    const eventListeners = channelListeners[eventName];
     if (!eventListeners) { return; }
 
-    forEach(keys(eventListeners), function(guid) {
+    Object.keys(eventListeners).forEach(function(guid) {
       eventListeners[guid].call(null, data);
     });
   },
 
-  flushAllPending: function() {
+  flushAllPending() {
     this._flushAllPendingBind();
     this._flushAllPendingUnbind();
   },
@@ -73,16 +73,16 @@ export default Socket.extend(StatefulMixin, {
   isConnecting: retrieveFromCurrentState,
   isUnavailable: retrieveFromCurrentState,
 
-  pushPendingBind: function(channelName, eventName) {
-    var pendingBinds = this.pendingBind[channelName];
+  pushPendingBind(channelName, eventName) {
+    let pendingBinds = this.pendingBind[channelName];
     if (!pendingBinds) {
       pendingBinds = this.pendingBind[channelName] = [];
     }
     pendingBinds.push(eventName);
   },
 
-  pushPendingUnbind: function(channelName, eventName) {
-    var pendingUnbinds = this.pendingUnbind[channelName];
+  pushPendingUnbind(channelName, eventName) {
+    let pendingUnbinds = this.pendingUnbind[channelName];
     if (!pendingUnbinds) {
       pendingUnbinds = this.pendingUnbind[channelName] = [];
     }
@@ -97,16 +97,16 @@ export default Socket.extend(StatefulMixin, {
     connected: {
       isConnected: true,
 
-      becameConnecting: function(socket) {
+      becameConnecting(socket) {
         socket.transitionTo('connecting.reconnecting');
       },
 
-      listenerAdded: function(socket, channelName, eventName) {
+      listenerAdded(socket, channelName, eventName) {
         socket.pushPendingBind(channelName, eventName);
         socket.flushAllPending();
       },
 
-      listenerRemoved: function(socket, channelName, eventName) {
+      listenerRemoved(socket, channelName, eventName) {
         socket.pushPendingUnbind(channelName, eventName);
         socket.flushAllPending();
       }
@@ -116,52 +116,52 @@ export default Socket.extend(StatefulMixin, {
       isConnecting: true,
 
       firstTime: {
-        becameConnected: function(socket) {
+        becameConnected(socket) {
           socket.transitionTo('connected');
         },
 
-        exit: function(socket) {
+        exit(socket) {
           socket.flushAllPending();
         },
 
-        listenerAdded: function(socket, channelName, eventName) {
+        listenerAdded(socket, channelName, eventName) {
           socket.pushPendingBind(channelName, eventName);
         },
 
-        listenerRemoved: function(socket, channelName, eventName) {
+        listenerRemoved(socket, channelName, eventName) {
           socket.pushPendingUnbind(channelName, eventName);
         }
       },
 
       reconnecting: {
-        becameDisconnected: function(socket) {
+        becameDisconnected(socket) {
           socket.transitionTo('disconnected.temporary');
         }
       }
     },
 
     initialized: {
-      becameConnected: function(socket) {
+      becameConnected(socket) {
         socket.transitionTo('connected');
         socket.flushAllPending();
       },
 
-      becameConnecting: function(socket) {
+      becameConnecting(socket) {
         socket.transitionTo('connecting.firstTime');
       },
 
-      listenerAdded: function(socket, channelName, eventName) {
+      listenerAdded(socket, channelName, eventName) {
         socket.pushPendingBind(channelName, eventName);
       },
 
-      listenerRemoved: function(socket, channelName, eventName) {
+      listenerRemoved(socket, channelName, eventName) {
         socket.pushPendingUnbind(channelName, eventName);
       }
     },
 
     disconnected: {
       temporary: {
-        becameUnavailable: function(socket) {
+        becameUnavailable(socket) {
           socket.transitionTo('disconnected.unavailable');
         }
       },
@@ -172,28 +172,28 @@ export default Socket.extend(StatefulMixin, {
     }
   },
 
-  subscribe: function(subscriber) {
-    var subscriptions = subscriber.subscriptions;
+  subscribe(subscriber) {
+    let subscriptions = subscriber.subscriptions;
     if (!subscriptions) { return; }
 
     subscriptions = subscriptions.pusher;
     if (!subscriptions) { return; }
 
-    var guid = Ember.guidFor(subscriber);
-    var subscriberListeners = this.subscriberListeners[guid];
+    const guid = guidFor(subscriber);
+    let subscriberListeners = this.subscriberListeners[guid];
     if (!subscriberListeners) {
       subscriberListeners = this.subscriberListeners[guid] = {};
     }
 
-    forEach(keys(subscriptions), function(channelName) {
-      var eventListeners = subscriberListeners[channelName];
+    Object.keys(subscriptions).forEach(function(channelName) {
+      let eventListeners = subscriberListeners[channelName];
       if (!eventListeners) {
         eventListeners = subscriberListeners[channelName] = {};
       }
 
-      var eventBindings = subscriptions[channelName];
-      forEach(keys(eventBindings), function(eventName) {
-        var listener = eventListeners[eventName];
+      const eventBindings = subscriptions[channelName];
+      Object.keys(eventBindings).forEach(function(eventName) {
+        let listener = eventListeners[eventName];
         if (!listener) {
           listener = eventListeners[eventName] = function(data) {
             subscriber.send(eventBindings[eventName], data);
@@ -205,41 +205,41 @@ export default Socket.extend(StatefulMixin, {
     }, this);
   },
 
-  unavailable: function() {
+  unavailable() {
     this.send('becameUnavailable');
   },
 
-  unbind: function(channelName, eventName, fn) {
-    var channelListeners = this.listeners[channelName];
+  unbind(channelName, eventName, fn) {
+    const channelListeners = this.listeners[channelName];
     if (!channelListeners) { return; }
 
-    var eventListeners = channelListeners[eventName];
+    const eventListeners = channelListeners[eventName];
     if (!eventListeners) { return; }
 
-    var guid = Ember.guidFor(fn);
+    const guid = guidFor(fn);
     delete eventListeners[guid];
 
     this.send('listenerRemoved', channelName, eventName);
   },
 
-  unsubscribe: function(subscriber) {
-    var subscriptions = subscriber.subscriptions;
+  unsubscribe(subscriber) {
+    let subscriptions = subscriber.subscriptions;
     if (!subscriptions) { return; }
 
     subscriptions = subscriptions.pusher;
     if (!subscriptions) { return; }
 
-    var guid = Ember.guidFor(subscriber);
-    var subscriberListeners = this.subscriberListeners[guid];
+    const guid = guidFor(subscriber);
+    const subscriberListeners = this.subscriberListeners[guid];
     if (!subscriberListeners) { return; }
 
-    forEach(keys(subscriptions), function(channelName) {
-      var eventListeners = subscriberListeners[channelName];
+    Object.keys(subscriptions).forEach(function(channelName) {
+      const eventListeners = subscriberListeners[channelName];
       if (!eventListeners) { return; }
 
-      var eventBindings = subscriptions[channelName];
-      forEach(keys(eventBindings), function(eventName) {
-        var fn = eventListeners[eventName];
+      const eventBindings = subscriptions[channelName];
+      Object.keys(eventBindings).forEach(function(eventName) {
+        const fn = eventListeners[eventName];
         if (!fn) { return; }
 
         this.unbind(channelName, eventName, fn);
@@ -252,8 +252,8 @@ export default Socket.extend(StatefulMixin, {
     delete this.subscriberListeners[guid];
   },
 
-  _bindPusherEvent: function(channelName, eventName) {
-    var pusherSubscription = this.pusherSubscriptions[channelName];
+  _bindPusherEvent(channelName, eventName) {
+    let pusherSubscription = this.pusherSubscriptions[channelName];
     if (!pusherSubscription) {
       pusherSubscription = this.pusherSubscriptions[channelName] = {
         channel: null,
@@ -261,16 +261,16 @@ export default Socket.extend(StatefulMixin, {
       };
     }
 
-    var channel = pusherSubscription.channel;
+    let channel = pusherSubscription.channel;
     if (!channel) {
       channel = pusherSubscription.channel = this.get('pusher').subscribe(channelName);
     }
 
-    var eventBinding = pusherSubscription.eventBindings[eventName];
+    let eventBinding = pusherSubscription.eventBindings[eventName];
     if (!eventBinding) {
       eventBinding = pusherSubscription.eventBindings[eventName] = {
         listenerCount: 0,
-        handlerFunction: Ember.run.bind(this, function(data) {
+        handlerFunction: bind(this, function(data) {
           this.emit(channelName, eventName, data);
         })
       };
@@ -281,11 +281,11 @@ export default Socket.extend(StatefulMixin, {
     eventBinding.listenerCount++;
   },
 
-  _flushAllPendingBind: function() {
-    forEach(keys(this.pendingBind), function(channelName) {
-      var pendingEvents = this.pendingBind[channelName];
+  _flushAllPendingBind() {
+    Object.keys(this.pendingBind).forEach(function(channelName) {
+      const pendingEvents = this.pendingBind[channelName];
 
-      forEach(pendingEvents, function(eventName) {
+      pendingEvents.forEach(function(eventName) {
         this._bindPusherEvent(channelName, eventName);
       }, this);
 
@@ -293,11 +293,11 @@ export default Socket.extend(StatefulMixin, {
     }, this);
   },
 
-  _flushAllPendingUnbind: function() {
-    forEach(keys(this.pendingUnbind), function(channelName) {
-      var pendingEvents = this.pendingUnbind[channelName];
+  _flushAllPendingUnbind() {
+    Object.keys(this.pendingUnbind).forEach(function(channelName) {
+      const pendingEvents = this.pendingUnbind[channelName];
 
-      forEach(pendingEvents, function(eventName) {
+      pendingEvents.forEach(function(eventName) {
         this._unbindPusherEvent(channelName, eventName);
       }, this);
 
@@ -305,22 +305,22 @@ export default Socket.extend(StatefulMixin, {
     }, this);
   },
 
-  _setup: function() {
-    var pusher = this.get('pusher');
+  _setup() {
+    const pusher = this.get('pusher');
 
-    forEach(['connected', 'connecting', 'disconnected', 'unavailable'], function(eventName) {
-      pusher.connection.bind(eventName, Ember.run.bind(this, eventName));
+    ['connected', 'connecting', 'disconnected', 'unavailable'].forEach(function(eventName) {
+      pusher.connection.bind(eventName, bind(this, eventName));
     }, this);
   },
 
-  _unbindPusherEvent: function(channelName, eventName) {
-    var pusherSubscription = this.pusherSubscriptions[channelName];
+  _unbindPusherEvent(channelName, eventName) {
+    const pusherSubscription = this.pusherSubscriptions[channelName];
     if (!pusherSubscription) { return; }
 
-    var channel = pusherSubscription.channel;
+    const channel = pusherSubscription.channel;
     if (!channel) { return; } // XXX: can this ever happen?
 
-    var eventBinding = pusherSubscription.eventBindings[eventName];
+    const eventBinding = pusherSubscription.eventBindings[eventName];
     if (!eventBinding) { return; }
 
     eventBinding.listenerCount--;
@@ -330,7 +330,7 @@ export default Socket.extend(StatefulMixin, {
       delete pusherSubscription.eventBindings[eventName];
     }
 
-    if (isEmpty(keys(pusherSubscription.eventBindings))) {
+    if (isEmpty(Object.keys(pusherSubscription.eventBindings))) {
       this.get('pusher').unsubscribe(channelName);
       delete this.pusherSubscriptions[channelName];
     }

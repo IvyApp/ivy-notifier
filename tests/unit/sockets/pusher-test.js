@@ -1,7 +1,6 @@
 import Ember from 'ember';
 import PusherSocket from 'ivy-notifier/sockets/pusher';
-import { module } from 'qunit';
-import { test } from 'ember-qunit';
+import { module, test } from 'qunit';
 
 function Subscription(channelName) {
   this.channelName = channelName;
@@ -9,7 +8,7 @@ function Subscription(channelName) {
 }
 
 Subscription.prototype = {
-  bind: function(eventName, callback) {
+  bind: function(eventName) {
     this.bindings.push(eventName);
   },
 

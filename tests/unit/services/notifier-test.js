@@ -1,25 +1,16 @@
 import Ember from 'ember';
-import Socket from 'ivy-notifier/socket';
-import Notifier from 'ivy-notifier/notifier';
-import { module } from 'qunit';
-import { test } from 'ember-qunit';
+import Socket from 'ivy-notifier/sockets/socket';
+import { moduleFor, test } from 'ember-qunit';
 
-var container;
-
-module('unit/notifier', {
-  setup: function() {
-    container = new Ember.Container();
-  },
-
-  teardown: function() {
-    Ember.run(container, 'destroy');
-  }
+moduleFor('service:notifier', 'Unit | Service | notifier', {
+  // Specify the other units that are required for this test.
+  // needs: ['service:foo']
 });
 
 test('a subscriber can subscribe to a notifier', function(assert) {
   assert.expect(1);
 
-  container.register('socket:test', Socket.extend({
+  this.register('socket:test', Socket.extend({
     subscribe: function(subscriber, subscriptions) {
       assert.deepEqual(subscriptions, { event: 'event' });
     }
@@ -31,7 +22,7 @@ test('a subscriber can subscribe to a notifier', function(assert) {
     }
   });
 
-  var notifier = Notifier.create({ container: container });
+  var notifier = this.subject();
   var subscriber = Subscriber.create();
 
   notifier.subscribe(subscriber);
@@ -40,7 +31,7 @@ test('a subscriber can subscribe to a notifier', function(assert) {
 test('a subscriber can unsubscribe from a notifier', function(assert) {
   assert.expect(1);
 
-  container.register('socket:test', Socket.extend({
+  this.register('socket:test', Socket.extend({
     unsubscribe: function(subscriber, subscriptions) {
       assert.deepEqual(subscriptions, { event: 'event' });
     }
@@ -52,7 +43,7 @@ test('a subscriber can unsubscribe from a notifier', function(assert) {
     }
   });
 
-  var notifier = Notifier.create({ container: container });
+  var notifier = this.subject();
   var subscriber = Subscriber.create();
 
   notifier.subscribe(subscriber);
@@ -66,10 +57,10 @@ test('should throw an error if socket cannot be found', function(assert) {
     }
   });
 
-  var notifier = Notifier.create({ container: container });
+  var notifier = this.subject();
   var subscriber = Subscriber.create();
 
   assert.throws(function() {
     notifier.subscribe(subscriber);
-  }, /No socket was found for "test"/);
+  }, /No socket was found for 'test'/);
 });

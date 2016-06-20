@@ -1,13 +1,16 @@
-import Ember from 'ember';
+import Mixin from 'ember-metal/mixin';
+import injectService from 'ember-service/inject';
 
-export default Ember.Mixin.create({
-  init: function() {
-    this._super();
-    this.notifier.subscribe(this);
+export default Mixin.create({
+  init() {
+    this._super(...arguments);
+    this.get('notifier').subscribe(this);
   },
 
-  willDestroy: function() {
-    this.notifier.unsubscribe(this);
-    this._super();
+  notifier: injectService(),
+
+  willDestroy() {
+    this.get('notifier').unsubscribe(this);
+    this._super(...arguments);
   }
 });
