@@ -301,7 +301,7 @@ export default Socket.extend(StatefulMixin, {
         this._unbindPusherEvent(channelName, eventName);
       }, this);
 
-      delete this.pendingBind[channelName];
+      delete this.pendingUnbind[channelName];
     }, this);
   },
 
